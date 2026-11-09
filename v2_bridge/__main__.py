@@ -85,7 +85,8 @@ def open_goggles():
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--size', type=parse_size, default='1440x810', help='Stream size (default: %(default)s)')
-    parser.add_argument('--fps', type=int, default=60, help='Stream rate (default: %(default)s)')
+    parser.add_argument('--fps', type=int, default=120,
+                        help="Stream rate, at most the shared display's refresh rate (default: %(default)s)")
     parser.add_argument('--bitrate-mbps', type=int, default=30, help='Video bitrate (default: %(default)s)')
     parser.add_argument('--hide-cursor', dest='show_cursor', action='store_false')
     args = parser.parse_args()
