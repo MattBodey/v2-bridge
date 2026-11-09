@@ -4,7 +4,7 @@ Stream a Linux desktop to DJI FPV Goggles V2 over USB, with no Moonlight host or
 
 The stock V2 firmware can't take video from a PC, so this needs [WTFOS](https://fpv.wtf/) and [dji-moonlight-shim](https://github.com/fpv-wtf/dji-moonlight-shim) on the goggles. This project replaces the Windows PC side of that setup. It captures the desktop, encodes it with NVENC, and sends H.264 to the shim's USB bulk channel.
 
-**Status:** experimental. It displayed video on one rooted FPV Goggles V2 at 1440x810 from KDE Plasma on Wayland, but the stream currently delivers only about 10 fps, even with a 60 fps target. Latency hasn't been measured, and the defaults below are starting points.
+**Status:** experimental. It displayed video on one rooted FPV Goggles V2 at 1440x810 from KDE Plasma on Wayland, mirroring a 200 Hz monitor at 65 to 80 fps with a 60 fps target. Latency hasn't been measured, and the defaults below are starting points.
 
 ## Requirements
 
@@ -41,7 +41,7 @@ SUBSYSTEM=="usb", ATTR{idVendor}=="2ca3", ATTR{idProduct}=="001f", MODE="0660", 
    .venv/bin/python -m v2_bridge
    ```
 
-On the first run, the desktop asks which monitor to share. The grant is saved in `work/portal-restore-token`. To choose again, delete that file. Press **Ctrl+C** to stop, or **BACK** on the goggles to exit the shim.
+On the first run, the desktop asks which monitor to share. The grant is saved in `work/portal-restore-token`. To choose again, delete that file. On KDE, a virtual or new output adds an empty extra desktop, and the goggles show that instead of your monitor. It sends about 10 fps until something moves on it. Press **Ctrl+C** to stop, or **BACK** on the goggles to exit the shim.
 
 | Option | Default | Notes |
 | --- | --- | --- |
