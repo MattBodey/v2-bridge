@@ -1,5 +1,6 @@
 """Stream the Linux desktop to rooted DJI FPV Goggles V2 running dji-moonlight-shim."""
 import argparse
+import os
 from pathlib import Path
 import re
 import shutil
@@ -7,6 +8,7 @@ import struct
 import subprocess
 import sys
 import time
+import tomllib
 
 import usb.core
 import usb.util
@@ -23,6 +25,29 @@ WRITE_TIMEOUT_MS = 1000
 SHIM_IDLE_SECONDS = 3
 HELPER = Path(__file__).resolve().with_name('linux_capture.py')
 TOKEN_FILE = HELPER.parents[1] / 'work' / 'portal-restore-token'
+CONFIG_FILE = Path(os.environ.get('XDG_CONFIG_HOME') or Path.home() / '.config') / 'v2-bridge' / 'config.toml'
+VALUE_SETTINGS = ('size', 'fps', 'bitrate-mbps')
+
+
+def config_arguments(path):
+    """Return the config file as command-line arguments, so flags given after them win and both get the same checks."""
+    try:
+        with path.open('rb') as file:
+            config = tomllib.load(file)
+    except FileNotFoundError:
+        return []
+    # ValueError covers both invalid TOML and non-UTF-8 bytes
+    except (OSError, ValueError) as exc:
+        raise SystemExit(f'Cannot read config file {path}: {exc}')
+    arguments = []
+    for name, value in config.items():
+        if name in VALUE_SETTINGS and type(value) in (int, str):
+            arguments += [f'--{name}', str(value)]
+        elif name == 'hide-cursor' and type(value) is bool:
+            arguments += ['--hide-cursor'] if value else []
+        else:
+            raise SystemExit(f'Invalid setting in {path}: {name} = {value!r}')
+    return arguments
 
 
 def parse_size(text):
@@ -85,11 +110,13 @@ def open_goggles():
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--size', type=parse_size, default='1440x810', help='Stream size (default: %(default)s)')
-    parser.add_argument('--fps', type=int, default=120,
+    parser.add_argument('--fps', type=int, default=60,
                         help="Stream rate, at most the shared display's refresh rate (default: %(default)s)")
     parser.add_argument('--bitrate-mbps', type=int, default=30, help='Video bitrate (default: %(default)s)')
     parser.add_argument('--hide-cursor', dest='show_cursor', action='store_false')
-    args = parser.parse_args()
+    parser.add_argument('--show-cursor', dest='show_cursor', action='store_true', default=True,
+                        help='Undo hide-cursor from the config file')
+    args = parser.parse_args(config_arguments(CONFIG_FILE) + sys.argv[1:])
     if args.fps <= 0 or args.bitrate_mbps <= 0:
         parser.error('--fps and --bitrate-mbps must be positive')
     ffmpeg = shutil.which('ffmpeg')
