@@ -76,7 +76,8 @@ def gst_command(fd, node, fps, size):
     """Return the GStreamer pipeline that writes letterboxed NV12 frames to stdout."""
     width, height = size.split('x')
     return ['gst-launch-1.0', '-q', 'pipewiresrc', f'fd={fd}', f'path={node}', 'do-timestamp=true',
-            f'keepalive-time={KEEPALIVE_MS}', '!', 'videorate', 'drop-only=true', f'max-rate={fps}',
+            # ponytail: the compositor paces frames evenly, but this fails if fps exceeds the monitor's maximum
+            f'keepalive-time={KEEPALIVE_MS}', '!', f'video/x-raw,max-framerate={fps}/1',
             # keep only the newest frame so slow scaling drops frames instead of adding delay
             '!', 'queue', 'leaky=downstream', 'max-size-buffers=1', 'max-size-bytes=0', 'max-size-time=0',
             '!', 'videoconvertscale', 'method=bilinear', 'add-borders=true', f'n-threads={os.cpu_count() or 1}',

@@ -33,6 +33,12 @@ class StreamTests(unittest.TestCase):
             bridge.stream(lambda _: b'data', writes.append, '1440x810', 60, report=lambda _: None)
         self.assertEqual(len(writes), 2)
 
+    def test_compositor_paces_capture_at_the_stream_rate(self):
+        from v2_bridge import linux_capture
+        command = linux_capture.gst_command(7, 42, 90, '1440x810')
+        self.assertIn('video/x-raw,max-framerate=90/1', command)
+        self.assertNotIn('videorate', command)
+
     def test_size_must_suit_nv12(self):
         self.assertEqual(bridge.parse_size('1280x720'), '1280x720')
         for bad in ('1441x810', '0x810', '1440', 'axb'):
